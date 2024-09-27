@@ -7,9 +7,9 @@ import {
   Col
 } from 'react-bootstrap';
 
-import { getMe, deleteBook } from '../client/src/utils/APIls/API';
-import Auth from '../client/src/utils/auths/auth';
-import { removeBookId } from '../client/src/utils/localStoragetorage';
+import { getMe, deleteBook } from '../utils/API';
+import Auth from '../utils/auth';
+import { removeBookId } from '../utils/localStorage';
 
 const SavedBooks = () => {
   const [userData, setUserData] = useState({});
