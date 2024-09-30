@@ -1,21 +1,44 @@
 const express = require('express');
 const path = require('path');
+const { ApolloServer } = require('apollo-server-express'); 
+const { typeDefs, resolvers } = require('./schemas');
 const db = require('./config/connection');
 const routes = require('./routes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// Set up Apollo Server
+const startApolloServer = async () => {
+  const server = new ApolloServer({
+    typeDefs,     
+    resolvers,    
+    context: ({ req }) => ({ req }) // user authentication later
+  });
 
-// if we're in production, serve client/build as static assets
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
-}
+  await server.start(); 
+  server.applyMiddleware({ app }); 
 
-app.use(routes);
+  // Middleware 
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
 
-db.once('open', () => {
-  app.listen(PORT, () => console.log(`🌍 Now listening on localhost:${PORT}`));
-});
+  // Serve static files from the React frontend in production
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../client/build')));
+  }
+
+  // for RESTful routes
+  app.use(routes);
+
+  // Start the database connection and the Express server
+  db.once('open', () => {
+    app.listen(PORT, () => {
+      console.log(`🌍 Now listening on http://localhost:${PORT}`);
+      console.log(`🚀 GraphQL server ready at http://localhost:${PORT}${server.graphqlPath}`);
+    });
+  });
+};
+
+// Initialize Apollo and start the server
+startApolloServer();
