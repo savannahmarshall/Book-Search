@@ -4,16 +4,21 @@ const { ApolloServer } = require('apollo-server-express');
 const { typeDefs, resolvers } = require('./schemas');
 const db = require('./config/connection');
 const routes = require('./routes');
+const { authMiddleware } = require('./utils/auth'); 
 
-const app = express();
-const PORT = process.env.PORT || 3001;
-
-// Set up Apollo Server
 const startApolloServer = async () => {
+  const app = express();
+  const PORT = process.env.PORT || 3001;
+
+  // Set up Apollo Server
   const server = new ApolloServer({
-    typeDefs,     
-    resolvers,    
-    context: ({ req }) => ({ req }) // user authentication later
+    typeDefs,
+    resolvers,
+    context: ({ req }) => {
+      // Use the Middleware to get user from token
+      const { user } = authMiddleware(req); 
+      return { user };
+    },
   });
 
   await server.start(); 
@@ -28,7 +33,7 @@ const startApolloServer = async () => {
     app.use(express.static(path.join(__dirname, '../client/build')));
   }
 
-  // for RESTful routes
+  // For RESTful routes
   app.use(routes);
 
   // Start the database connection and the Express server
